@@ -1,0 +1,111 @@
+.alert-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.alert-modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 320px;
+    max-width: 500px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-modal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.alert-modal-content.success .alert-modal-icon {
+    background: #d4edda;
+    color: #28a745;
+}
+
+.alert-modal-content.error .alert-modal-icon {
+    background: #f8d7da;
+    color: #dc3545;
+}
+
+.alert-modal-content.warning .alert-modal-icon {
+    background: #fff3cd;
+    color: #ffc107;
+}
+
+.alert-modal-content.info .alert-modal-icon {
+    background: #d1ecf1;
+    color: #17a2b8;
+}
+
+.alert-modal-message {
+    flex: 1;
+    color: #1a1a1a;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.alert-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.alert-modal-close:hover {
+    background: #f0f0f0;
+    color: #666;
+}

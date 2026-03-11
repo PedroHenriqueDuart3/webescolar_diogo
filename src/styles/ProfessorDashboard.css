@@ -1,0 +1,678 @@
+.professor-dashboard {
+    min-height: calc(100vh - 70px);
+    background: #f8f8f8;
+}
+
+.dashboard-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 2px solid #000000;
+    margin-bottom: 40px;
+    max-width: 500px;
+}
+
+.search-icon {
+    color: #000000;
+    font-size: 1.1rem;
+}
+
+.search-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 0.95rem;
+    color: #1a1a1a;
+}
+
+.search-bar input::placeholder {
+    color: #898686;
+}
+
+.describe {
+    color: black;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 3%;
+}
+
+.students-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 24px;
+}
+
+.student-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #000000;
+    transition: all 0.2s;
+}
+
+.student-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.student-card-header h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.matricula {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.student-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-action {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-add-grades {
+    background: #2135A4;
+    color: white;
+}
+
+.btn-add-grades:hover {
+    background: #1a2a85;
+}
+
+.btn-observation {
+    background: #2135A4;
+    color: white;
+}
+
+.btn-observation:hover {
+    background: #1a2a85;
+}
+
+.btn-grades {
+    background: #2135A4;
+    color: white;
+}
+
+.btn-grades:hover {
+    background: #1a2a85;
+}
+
+.grades-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e8e8e8;
+}
+
+.grades-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 24px;
+}
+
+.btn-edit-grades {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: #2135A4;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-edit-grades:hover {
+    background: #1a2a85;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-save-grades {
+    padding: 12px 24px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-save-grades:hover {
+    background: #218838;
+}
+
+.btn-cancel-grades {
+    padding: 12px 24px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel-grades:hover {
+    background: #5a6268;
+}
+
+.grades-table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e8e8e8;
+}
+
+.grades-table-full {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.grades-table-full thead {
+    background: #2135A4;
+    color: white;
+}
+
+.grades-table-full th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.95rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.grades-table-full th:last-child {
+    border-right: none;
+}
+
+.grades-table-full tbody tr {
+    border-bottom: 1px solid #e8e8e8;
+    transition: background 0.2s;
+}
+
+.grades-table-full tbody tr:hover {
+    background: #f8f8f8;
+}
+
+.grades-table-full tbody tr:last-child {
+    border-bottom: none;
+}
+
+.grades-table-full td {
+    padding: 16px;
+    font-size: 0.95rem;
+    color: #1a1a1a;
+    border-right: 1px solid #e8e8e8;
+}
+
+.grades-table-full td:last-child {
+    border-right: none;
+}
+
+.grade-input {
+    width: 80px;
+    padding: 8px 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.grade-input:focus {
+    outline: none;
+    border-color: #2135A4;
+}
+
+.media-approved {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.media-failed {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.observations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.observations-header {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-edit-observations {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: #2135A4;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-edit-observations:hover {
+    background: #1a2a85;
+}
+
+.btn-cancel-observations {
+    padding: 12px 24px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel-observations:hover {
+    background: #5a6268;
+}
+
+.observation-section h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    color: #1a1a1a;
+}
+
+.observation-card {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    border-left: 4px solid #2135A4;
+    margin-bottom: 12px;
+}
+
+.observation-header-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.observation-date {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+    font-weight: 500;
+}
+
+.observation-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-edit-icon {
+    color: #2135A4;
+}
+
+.btn-edit-icon:hover {
+    background: #e8f0ff;
+}
+
+.btn-delete-icon {
+    color: #dc3545;
+}
+
+.btn-delete-icon:hover {
+    background: #ffe8ea;
+}
+
+.observation-text {
+    margin: 0;
+    color: #1a1a1a;
+    line-height: 1.6;
+}
+
+.edit-comment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.edit-comment-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.edit-comment-textarea:focus {
+    outline: none;
+    border-color: #2135A4;
+}
+
+.edit-comment-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-save-comment {
+    padding: 8px 16px;
+    background: #2d6eb9;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-save-comment:hover {
+    background: #101094;
+
+}
+
+.btn-cancel-comment {
+    padding: 8px 16px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel-comment:hover {
+    background: #5a6268;
+}
+
+.bi-section {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    border: 1px solid #e8e8e8;
+}
+
+.bi-container h2 {
+    margin: 0 0 16px 0;
+    font-size: 1.5rem;
+    color: #1a1a1a;
+}
+
+.bi-placeholder {
+    color: #666;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+}
+
+.bi-iframe-placeholder {
+    background: #f8f8f8;
+    border: 2px dashed #d0d0d0;
+    border-radius: 8px;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #999;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #1a1a1a;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #666;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+}
+
+.modal-close:hover {
+    color: #1a1a1a;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.student-name-modal {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 4px 0;
+}
+
+.student-matricula-modal {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 0 24px 0;
+}
+
+.modal-body form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-body textarea {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.modal-body textarea:focus {
+    outline: none;
+    border-color: #2135A4;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.form-group input {
+    padding: 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #2135A4;
+}
+
+.btn-submit {
+    padding: 14px;
+    background: #2135A4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-submit:hover {
+    background: #1a2a85;
+}
+
+.grades-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.grade-detail {
+    background: #f8f8f8;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.grade-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.95rem;
+}
+
+.grade-row span {
+    color: #666;
+}
+
+.grade-row strong {
+    color: #1a1a1a;
+}
+
+.grade-row strong.approved {
+    color: #28a745;
+}
+
+.grade-row strong.failed {
+    color: #dc3545;
+}
+
+.grade-date {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.no-grades-modal {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-content {
+        padding: 20px;
+    }
+
+    .students-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .student-card-actions {
+        flex-direction: column;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
