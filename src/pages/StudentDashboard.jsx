@@ -125,20 +125,55 @@ export const StudentDashboard = ({ user, activeTab, setActiveTab }) => {
 
     const downloadBoletim = () => {
         const doc = new jsPDF();
+        let currentY = 20;
 
-        // Cabeçalho
-        doc.setFontSize(18);
+        // ═══════════════════════════════════════════
+        // CABEÇALHO
+        // ═══════════════════════════════════════════
+        doc.setFillColor(33, 53, 164);
+        doc.rect(0, 0, 210, 35, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('BOLETIM ESCOLAR', 105, 20, { align: 'center' });
+        doc.text('BOLETIM ESCOLAR', 105, 15, { align: 'center' });
 
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Aluno: ${user.name}`, 20, 35);
-        doc.text(`Matrícula: ${user.matricula}`, 20, 42);
-        doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, 49);
+        doc.text('Sistema de Gestão Acadêmica', 105, 23, { align: 'center' });
 
+        // ═══════════════════════════════════════════
+        // INFORMAÇÕES DO ALUNO
+        // ═══════════════════════════════════════════
+        currentY = 45;
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DADOS DO ALUNO', 20, currentY);
+
+        currentY += 8;
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Nome: ${user.name}`, 20, currentY);
+
+        currentY += 6;
+        doc.text(`Matrícula: ${user.matricula}`, 20, currentY);
+
+        currentY += 6;
+        doc.text(`Data de Emissão: ${new Date().toLocaleDateString('pt-BR')}`, 20, currentY);
+
+        currentY += 8;
         doc.setLineWidth(0.5);
-        doc.line(20, 55, 190, 55);
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, currentY, 190, currentY);
+
+        // ═══════════════════════════════════════════
+        // TABELA DE NOTAS
+        // ═══════════════════════════════════════════
+        currentY += 8;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DESEMPENHO ACADÊMICO', 20, currentY);
 
         const gradesBySubject = getGradesBySubject();
         const tableData = [];
@@ -158,20 +193,27 @@ export const StudentDashboard = ({ user, activeTab, setActiveTab }) => {
         });
 
         doc.autoTable({
-            startY: 60,
+            startY: currentY + 5,
             head: [['Disciplina', 'Nota 1', 'Nota 2', 'Média', 'Status']],
             body: tableData,
-            theme: 'grid',
+            theme: 'striped',
             headStyles: {
                 fillColor: [33, 53, 164],
                 textColor: 255,
                 fontStyle: 'bold',
                 halign: 'center',
+                fontSize: 11,
             },
-            bodyStyles: { halign: 'center' },
+            bodyStyles: {
+                halign: 'center',
+                fontSize: 10,
+            },
             columnStyles: {
-                0: { halign: 'left' },
-                4: { halign: 'center', cellWidth: 30 },
+                0: { halign: 'left', cellWidth: 70 },
+                1: { cellWidth: 25 },
+                2: { cellWidth: 25 },
+                3: { cellWidth: 25 },
+                4: { halign: 'center', cellWidth: 35 },
             },
             didParseCell(data) {
                 if (data.section === 'body' && data.column.index === 4) {
@@ -186,10 +228,18 @@ export const StudentDashboard = ({ user, activeTab, setActiveTab }) => {
             },
         });
 
-        const finalY = doc.lastAutoTable.finalY + 10;
-        doc.setFontSize(12);
+        // ═══════════════════════════════════════════
+        // MÉDIA GERAL E STATUS FINAL
+        // ═══════════════════════════════════════════
+        currentY = doc.lastAutoTable.finalY + 12;
+
+        doc.setFillColor(245, 245, 245);
+        doc.rect(20, currentY - 5, 170, 15, 'F');
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
-        doc.text(`Média Geral: ${calculateGeneralAverage()}`, 20, finalY);
+        doc.text(`MÉDIA GERAL: ${calculateGeneralAverage()}`, 25, currentY + 4);
 
         const generalAvg = parseFloat(calculateGeneralAverage());
         doc.setTextColor(
@@ -197,7 +247,74 @@ export const StudentDashboard = ({ user, activeTab, setActiveTab }) => {
             generalAvg >= 7 ? 167 : 53,
             69
         );
-        doc.text(generalAvg >= 7 ? 'APROVADO' : 'REPROVADO', 190, finalY, { align: 'right' });
+        doc.setFontSize(14);
+        doc.text(
+            generalAvg >= 7 ? 'APROVADO' : 'REPROVADO',
+            185,
+            currentY + 4,
+            { align: 'right' }
+        );
+
+        // ═══════════════════════════════════════════
+        // OBSERVAÇÕES (se houver)
+        // ═══════════════════════════════════════════
+        if (comments.length > 0) {
+            currentY += 20;
+
+            // Verifica se há espaço na página
+            if (currentY > 250) {
+                doc.addPage();
+                currentY = 20;
+            }
+
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('OBSERVAÇÕES DOS PROFESSORES', 20, currentY);
+
+            currentY += 8;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+
+            comments.slice(0, 5).forEach((comment) => {
+                if (currentY > 270) {
+                    doc.addPage();
+                    currentY = 20;
+                }
+
+                doc.setFont('helvetica', 'bold');
+                doc.text(`${comment.subject} - ${comment.professorName}`, 20, currentY);
+
+                currentY += 5;
+                doc.setFont('helvetica', 'italic');
+                doc.text(`${new Date(comment.date).toLocaleDateString('pt-BR')}`, 20, currentY);
+
+                currentY += 5;
+                doc.setFont('helvetica', 'normal');
+                const lines = doc.splitTextToSize(comment.observation, 170);
+                doc.text(lines, 20, currentY);
+
+                currentY += (lines.length * 4) + 6;
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // RODAPÉ
+        // ═══════════════════════════════════════════
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(128, 128, 128);
+            doc.setFont('helvetica', 'normal');
+            doc.text(
+                `Documento gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
+                105,
+                285,
+                { align: 'center' }
+            );
+            doc.text(`Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
+        }
 
         doc.save(`boletim_${user.matricula}_${Date.now()}.pdf`);
     };
@@ -249,18 +366,16 @@ export const StudentDashboard = ({ user, activeTab, setActiveTab }) => {
                                                     <div className="grade-item grade-average">
                                                         <span className="grade-label">Média:</span>
                                                         <span
-                                                            className={`grade-value ${
-                                                                parseFloat(average) >= 7 ? 'approved' : 'failed'
-                                                            }`}
+                                                            className={`grade-value ${parseFloat(average) >= 7 ? 'approved' : 'failed'
+                                                                }`}
                                                         >
                                                             {average}
                                                         </span>
                                                     </div>
                                                 </div>
                                                 <div
-                                                    className={`status-badge ${
-                                                        parseFloat(average) >= 7 ? 'approved' : 'failed'
-                                                    }`}
+                                                    className={`status-badge ${parseFloat(average) >= 7 ? 'approved' : 'failed'
+                                                        }`}
                                                 >
                                                     {parseFloat(average) >= 7 ? 'Aprovado' : 'Reprovado'}
                                                 </div>
