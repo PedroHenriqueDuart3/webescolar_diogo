@@ -4,78 +4,71 @@ import * as apiService from '../utils/api';
 import '../styles/Register.css';
 
 export const Register = ({ onRegister, onSwitchToLogin }) => {
-    const [formData, setFormData] = useState({
-        name: '',
+    const [dadosFormulario, setDadosFormulario] = useState({
+        nome: '',
         matricula: '',
         email: '',
-        password: '',
-        confirmPassword: ''
+        senha: '',
+        confirmarSenha: ''
     });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [erro, setErro] = useState('');
+    const [carregando, setCarregando] = useState(false);
+    const [mostrarSenha, setMostrarSenha] = useState(false);
 
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-    const handleSubmit = async (e) => {
+    const processarEnvio = async (e) => {
         e.preventDefault();
-        setError('');
+        setErro('');
 
-        if (!formData.name || !formData.matricula || !formData.email || !formData.password) {
-            setError('Preencha todos os campos obrigatórios');
+        if (!dadosFormulario.nome || !dadosFormulario.matricula || !dadosFormulario.email || !dadosFormulario.senha) {
+            setErro('Preencha todos os campos obrigatórios');
             return;
         }
 
-        if (formData.password !== formData.confirmPassword) {
-            setError('As senhas não coincidem');
+        if (dadosFormulario.senha !== dadosFormulario.confirmarSenha) {
+            setErro('As senhas não coincidem');
             return;
         }
 
-        if (formData.password.length < 6) {
-            setError('A senha deve ter no mínimo 6 caracteres');
+        if (dadosFormulario.senha.length < 6) {
+            setErro('A senha deve ter no mínimo 6 caracteres');
             return;
         }
 
-        setLoading(true);
+        setCarregando(true);
 
         try {
-            // Verifica se matrícula ou email já existem
             const alunos = await apiService.getAlunos();
 
-            const matriculaExiste = alunos.find((a) => a.matricula === formData.matricula);
+            const matriculaExiste = alunos.find((a) => a.matricula === dadosFormulario.matricula);
             if (matriculaExiste) {
-                setError('Já existe um aluno cadastrado com esta matrícula.');
-                setLoading(false);
+                setErro('Já existe um aluno cadastrado com esta matrícula.');
+                setCarregando(false);
                 return;
             }
 
-            const emailExiste = alunos.find((a) => a.email === formData.email);
+            const emailExiste = alunos.find((a) => a.email === dadosFormulario.email);
             if (emailExiste) {
-                setError('Já existe um aluno cadastrado com este e-mail.');
-                setLoading(false);
+                setErro('Já existe um aluno cadastrado com este e-mail.');
+                setCarregando(false);
                 return;
             }
 
-            // Cria o aluno na API
-            // api.js espera { name, email, password, matricula } e converte para { nome, email, senha, matricula }
             const novoAluno = await apiService.createAluno({
-                name: formData.name,
-                email: formData.email,
-                password: formData.password,
-                matricula: formData.matricula
+                name: dadosFormulario.nome,
+                email: dadosFormulario.email,
+                password: dadosFormulario.senha,
+                matricula: dadosFormulario.matricula
             });
 
-            // Retorna o usuário criado para o componente pai
             onRegister({
                 ...novoAluno,
                 role: 'aluno',
-                name: novoAluno.nome || formData.name
+                name: novoAluno.nome || dadosFormulario.nome
             });
         } catch (err) {
-            console.error('Erro ao cadastrar aluno:', err);
-            setError('Erro ao cadastrar. Tente novamente.');
+            setErro('Erro ao cadastrar. Tente novamente.');
         } finally {
-            setLoading(false);
+            setCarregando(false);
         }
     };
 
@@ -91,21 +84,21 @@ export const Register = ({ onRegister, onSwitchToLogin }) => {
                             <p>Cadastro de Alunos</p>
                         </div>
 
-                        {error && <div className="alert alert-error">{error}</div>}
+                        {erro && <div className="alert alert-error">{erro}</div>}
 
-                        <form onSubmit={handleSubmit} className="register-form">
+                        <form onSubmit={processarEnvio} className="register-form">
                             <div className="form-group">
-                                <label htmlFor="name">Nome:</label>
+                                <label htmlFor="nome">Nome:</label>
                                 <div className="input-with-icon">
                                     <FaUser className="input-icon" />
                                     <input
                                         type="text"
-                                        id="name"
+                                        id="nome"
                                         autoComplete="name"
                                         placeholder="Fulano Silva dos Santos"
-                                        value={formData.name}
+                                        value={dadosFormulario.nome}
                                         onChange={(e) =>
-                                            setFormData({ ...formData, name: e.target.value })
+                                            setDadosFormulario({ ...dadosFormulario, nome: e.target.value })
                                         }
                                     />
                                 </div>
@@ -120,9 +113,9 @@ export const Register = ({ onRegister, onSwitchToLogin }) => {
                                         id="email"
                                         autoComplete="email"
                                         placeholder="fulano.silva@email.com"
-                                        value={formData.email}
+                                        value={dadosFormulario.email}
                                         onChange={(e) =>
-                                            setFormData({ ...formData, email: e.target.value })
+                                            setDadosFormulario({ ...dadosFormulario, email: e.target.value })
                                         }
                                     />
                                 </div>
@@ -137,57 +130,57 @@ export const Register = ({ onRegister, onSwitchToLogin }) => {
                                         id="matricula"
                                         autoComplete="off"
                                         placeholder="Ex: 2024001"
-                                        value={formData.matricula}
+                                        value={dadosFormulario.matricula}
                                         onChange={(e) =>
-                                            setFormData({ ...formData, matricula: e.target.value })
+                                            setDadosFormulario({ ...dadosFormulario, matricula: e.target.value })
                                         }
                                     />
                                 </div>
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="password">Senha:</label>
+                                <label htmlFor="senha">Senha:</label>
                                 <div className="input-with-icon">
                                     <FaLock className="input-icon" />
                                     <input
-                                        type={showPassword ? "text" : "password"}
-                                        id="password"
+                                        type={mostrarSenha ? "text" : "password"}
+                                        id="senha"
                                         autoComplete="new-password"
                                         placeholder="••••••••"
-                                        value={formData.password}
+                                        value={dadosFormulario.senha}
                                         onChange={(e) =>
-                                            setFormData({ ...formData, password: e.target.value })
+                                            setDadosFormulario({ ...dadosFormulario, senha: e.target.value })
                                         }
                                     />
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', paddingRight: '10px', color: '#666', marginRight: '-60px'}}
+                                    <button
+                                        type="button"
+                                        onClick={() => setMostrarSenha(!mostrarSenha)}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', paddingRight: '10px', color: '#666', marginRight: '-60px' }}
                                     >
-                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                        {mostrarSenha ? <FaEyeSlash /> : <FaEye />}
                                     </button>
                                 </div>
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="confirmPassword">Confirmar Senha:</label>
+                                <label htmlFor="confirmarSenha">Confirmar Senha:</label>
                                 <div className="input-with-icon">
                                     <FaLock className="input-icon" />
                                     <input
-                                        type={showPassword ? "text" : "password"}
-                                        id="confirmPassword"
+                                        type={mostrarSenha ? "text" : "password"}
+                                        id="confirmarSenha"
                                         autoComplete="new-password"
                                         placeholder="••••••••"
-                                        value={formData.confirmPassword}
+                                        value={dadosFormulario.confirmarSenha}
                                         onChange={(e) =>
-                                            setFormData({ ...formData, confirmPassword: e.target.value })
+                                            setDadosFormulario({ ...dadosFormulario, confirmarSenha: e.target.value })
                                         }
                                     />
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn-primary" disabled={loading}>
-                                {loading ? 'Cadastrando...' : 'Cadastrar-se'}
+                            <button type="submit" className="btn-primary" disabled={carregando}>
+                                {carregando ? 'Cadastrando...' : 'Cadastrar-se'}
                             </button>
                         </form>
 
@@ -201,4 +194,4 @@ export const Register = ({ onRegister, onSwitchToLogin }) => {
             </div>
         </div>
     );
-};  
+};

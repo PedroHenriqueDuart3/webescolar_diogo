@@ -1,84 +1,83 @@
 export const storage = {
-    setAuth: (user) => {
-        localStorage.setItem('auth', JSON.stringify(user));
+    setAuth: (usuario) => {
+        localStorage.setItem('auth', JSON.stringify(usuario));
     },
 
     getAuth: () => {
-        const auth = localStorage.getItem('auth');
-        return auth ? JSON.parse(auth) : null;
+        const autenticacao = localStorage.getItem('auth');
+        return autenticacao ? JSON.parse(autenticacao) : null;
     },
 
     clearAuth: () => {
         localStorage.removeItem('auth');
     },
 
-    // Students
     getStudents: () => {
-        const students = localStorage.getItem('students');
-        return students ? JSON.parse(students) : [];
+        const alunos = localStorage.getItem('students');
+        return alunos ? JSON.parse(alunos) : [];
     },
 
-    setStudents: (students) => {
-        localStorage.setItem('students', JSON.stringify(students));
+    setStudents: (alunos) => {
+        localStorage.setItem('students', JSON.stringify(alunos));
     },
 
-    addStudent: (student) => {
-        const students = storage.getStudents();
-        students.push(student);
-        storage.setStudents(students);
+    addStudent: (aluno) => {
+        const alunos = storage.getStudents();
+        alunos.push(aluno);
+        storage.setStudents(alunos);
     },
 
     getGrades: () => {
-        const grades = localStorage.getItem('grades');
-        return grades ? JSON.parse(grades) : [];
+        const notas = localStorage.getItem('grades');
+        return notas ? JSON.parse(notas) : [];
     },
 
-    setGrades: (grades) => {
-        localStorage.setItem('grades', JSON.stringify(grades));
+    setGrades: (notas) => {
+        localStorage.setItem('grades', JSON.stringify(notas));
     },
 
-    addGrade: (grade) => {
-        const grades = storage.getGrades();
-        grades.push(grade);
-        storage.setGrades(grades);
+    addGrade: (nota) => {
+        const notas = storage.getGrades();
+        notas.push(nota);
+        storage.setGrades(notas);
     },
 
-    updateGrade: (gradeId, updatedGrade) => {
-        const grades = storage.getGrades();
-        const index = grades.findIndex(g => g.id === gradeId);
-        if (index !== -1) {
-            grades[index] = { ...grades[index], ...updatedGrade };
-            storage.setGrades(grades);
+    updateGrade: (idNota, notaAtualizada) => {
+        const notas = storage.getGrades();
+        const indice = notas.findIndex(n => n.id === idNota);
+        if (indice !== -1) {
+            notas[indice] = { ...notas[indice], ...notaAtualizada };
+            storage.setGrades(notas);
         }
     },
 
     getComments: () => {
-        const comments = localStorage.getItem('comments');
-        return comments ? JSON.parse(comments) : [];
+        const comentarios = localStorage.getItem('comments');
+        return comentarios ? JSON.parse(comentarios) : [];
     },
 
-    setComments: (comments) => {
-        localStorage.setItem('comments', JSON.stringify(comments));
+    setComments: (comentarios) => {
+        localStorage.setItem('comments', JSON.stringify(comentarios));
     },
 
-    addComment: (comment) => {
-        const comments = storage.getComments();
-        comments.push(comment);
-        storage.setComments(comments);
+    addComment: (comentario) => {
+        const comentarios = storage.getComments();
+        comentarios.push(comentario);
+        storage.setComments(comentarios);
     },
 
-    updateComment: (commentId, updatedComment) => {
-        const comments = storage.getComments();
-        const index = comments.findIndex(c => c.id === commentId);
-        if (index !== -1) {
-            comments[index] = { ...comments[index], ...updatedComment };
-            storage.setComments(comments);
+    updateComment: (idComentario, comentarioAtualizado) => {
+        const comentarios = storage.getComments();
+        const indice = comentarios.findIndex(c => c.id === idComentario);
+        if (indice !== -1) {
+            comentarios[indice] = { ...comentarios[indice], ...comentarioAtualizado };
+            storage.setComments(comentarios);
         }
     },
 
-    deleteComment: (commentId) => {
-        const comments = storage.getComments();
-        const filteredComments = comments.filter(c => c.id !== commentId);
-        storage.setComments(filteredComments);
+    deleteComment: (idComentario) => {
+        const comentarios = storage.getComments();
+        const comentariosFiltrados = comentarios.filter(c => c.id !== idComentario);
+        storage.setComments(comentariosFiltrados);
     }
 };

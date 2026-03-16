@@ -8,135 +8,99 @@ import { StudentDashboard } from './pages/StudentDashboard';
 import { storage } from './utils/storage';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('login');
-  const [user, setUser] = useState(null);
-  const [message, setMessage] = useState({ text: '', type: '' });
-  const [activeTab, setActiveTab] = useState('alunos');
+  const [paginaAtual, setPaginaAtual] = useState('login');
+  const [usuario, setUsuario] = useState(null);
+  const [mensagem, setMensagem] = useState({ texto: '', tipo: '' });
+  const [abaAtiva, setAbaAtiva] = useState('alunos');
 
   useEffect(() => {
-    const savedUser = storage.getAuth();
-    if (savedUser) {
-      loadUserWithSubject(savedUser);
+    const usuarioSalvo = storage.getAuth();
+    if (usuarioSalvo) {
+      carregarUsuarioComDisciplina(usuarioSalvo);
     }
   }, []);
 
-  const loadUserWithSubject = async (userData) => {
-    try {
-      if (userData.type === 'professor') {
-        // Busca informações completas do professor
-        const professores = await import('./utils/api').then(m => m.getProfessores());
-        const professor = professores.find(p => p.id === userData.id);
-
-        if (professor && professor.disciplina) {
-          userData.subject = professor.disciplina;
-          storage.setAuth(userData);
-        }
-      }
-
-      setUser(userData);
-      setCurrentPage(userData.type === 'professor' ? 'dashboard' : 'student');
-      setActiveTab(userData.type === 'professor' ? 'alunos' : 'notas');
-    } catch (error) {
-      console.error('Erro ao carregar dados do usuário:', error);
-      setUser(userData);
-      setCurrentPage(userData.type === 'professor' ? 'dashboard' : 'student');
-      setActiveTab(userData.type === 'professor' ? 'alunos' : 'notas');
-    }
+  const carregarUsuarioComDisciplina = async (dadosUsuario) => {
+    setUsuario(dadosUsuario);
+    setPaginaAtual(dadosUsuario.type === 'professor' ? 'dashboard' : 'student');
+    setAbaAtiva(dadosUsuario.type === 'professor' ? 'alunos' : 'notas');
   };
 
-  const handleLogin = async (userData) => {
-    if (userData) {
-      try {
-        if (userData.type === 'professor') {
-          // Busca informações completas do professor
-          const { getProfessores } = await import('./utils/api');
-          const professores = await getProfessores();
-          const professor = professores.find(p => p.id === userData.id);
+  const processarLogin = async (dadosUsuario) => {
+    if (dadosUsuario) {
+      storage.setAuth(dadosUsuario);
+      console.log('Token salvo no storage:', dadosUsuario.token);
 
-          if (professor && professor.disciplina) {
-            userData.subject = professor.disciplina;
-          }
-        }
-
-        storage.setAuth(userData);
-        setUser(userData);
-        setCurrentPage(userData.type === 'professor' ? 'dashboard' : 'student');
-        setActiveTab(userData.type === 'professor' ? 'alunos' : 'notas');
-        showMessage('Login realizado com sucesso!', 'success');
-      } catch (error) {
-        console.error('Erro ao carregar dados do professor:', error);
-        storage.setAuth(userData);
-        setUser(userData);
-        setCurrentPage(userData.type === 'professor' ? 'dashboard' : 'student');
-        setActiveTab(userData.type === 'professor' ? 'alunos' : 'notas');
-        showMessage('Login realizado com sucesso!', 'success');
-      }
+      setUsuario(dadosUsuario);
+      setPaginaAtual(dadosUsuario.type === 'professor' ? 'dashboard' : 'student');
+      setAbaAtiva(dadosUsuario.type === 'professor' ? 'alunos' : 'notas');
+      exibirMensagem('Login realizado com sucesso!', 'success');
     } else {
-      showMessage('Usuário ou senha incorretos', 'error');
+      exibirMensagem('Usuário ou senha incorretos', 'error');
     }
   };
 
-  const handleRegister = (userData) => {
-    showMessage('Cadastro realizado com sucesso! Faça login para continuar.', 'success');
-    setCurrentPage('login');
+  const processarCadastro = () => {
+    exibirMensagem('Cadastro realizado com sucesso! Faça login para continuar.', 'success');
+    setPaginaAtual('login');
   };
 
-  const handleLogout = () => {
+  const processarLogout = () => {
     storage.clearAuth();
-    setUser(null);
-    setCurrentPage('login');
-    showMessage('Logout realizado com sucesso!', 'success');
+    setUsuario(null);
+    setPaginaAtual('login');
+    exibirMensagem('Logout realizado com sucesso!', 'success');
   };
 
-  const showMessage = (text, type) => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+  const exibirMensagem = (texto, tipo) => {
+    setMensagem({ texto, tipo });
+    setTimeout(() => setMensagem({ texto: '', tipo: '' }), 3000);
   };
 
   return (
     <div className="app">
-      {user && (
+      {usuario && (
         <Header
-          user={user}
-          onLogout={handleLogout}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          user={usuario}
+          onLogout={processarLogout}
+          activeTab={abaAtiva}
+          setActiveTab={setAbaAtiva}
         />
       )}
 
-      {message.text && (
-        <div className={`app-message ${message.type}`}>
-          {message.text}
+      {mensagem.texto && (
+        <div className={`app-message ${mensagem.tipo}`}>
+          {mensagem.texto}
         </div>
       )}
 
-      {currentPage === 'login' && (
+      {paginaAtual === 'login' && (
         <Login
-          onLogin={handleLogin}
-          onSwitchToRegister={() => setCurrentPage('register')}
+          onLogin={processarLogin}
+          onSwitchToRegister={() => setPaginaAtual('register')}
         />
       )}
 
-      {currentPage === 'register' && (
+      {paginaAtual === 'register' && (
         <Register
-          onRegister={handleRegister}
-          onSwitchToLogin={() => setCurrentPage('login')}
+          onRegister={processarCadastro}
+          onSwitchToLogin={() => setPaginaAtual('login')}
         />
       )}
 
-      {currentPage === 'dashboard' && user?.type === 'professor' && (
+      {paginaAtual === 'dashboard' && usuario?.type === 'professor' && (
         <ProfessorDashboard
-          user={user}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          user={usuario}
+          activeTab={abaAtiva}
+          setActiveTab={setAbaAtiva}
         />
       )}
 
-      {currentPage === 'student' && user?.type === 'aluno' && (
+      {paginaAtual === 'student' && usuario?.type === 'aluno' && (
         <StudentDashboard
-          user={user}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          user={usuario}
+          activeTab={abaAtiva}
+          setActiveTab={setAbaAtiva}
         />
       )}
     </div>

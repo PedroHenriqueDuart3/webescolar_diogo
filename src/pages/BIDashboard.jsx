@@ -30,196 +30,176 @@ ChartJS.register(
 );
 
 export const BIDashboard = ({ user }) => {
-    const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({
-        totalStudents: 0,
-        studentsAboveAverage: 0,
-        studentsBelowAverage: 0,
-        averageGrade: 0,
-        topStudents: [],
-        gradeDistribution: { '0-2': 0, '2-4': 0, '4-7': 0, '7-8': 0, '8-10': 0 },
-        subjectPerformance: {},
-        monthlyTrend: {},
-        scatterData: [],
+    const [carregando, setCarregando] = useState(true);
+    const [estatisticas, setEstatisticas] = useState({
+        totalAlunos: 0,
+        alunosAprovados: 0,
+        alunosReprovados: 0,
+        mediaGeral: 0,
+        melhoresAlunos: [],
+        distribuicaoNotas: { '0-2': 0, '2-4': 0, '4-7': 0, '7-8': 0, '8-10': 0 },
+        desempenhoDisciplinas: {},
+        tendenciaMensal: {},
+        dadosDispersao: [],
         outliers: [],
     });
 
     useEffect(() => {
-        calculateStats();
+        calcularEstatisticas();
     }, []);
 
-    const calculateStats = async () => {
-        setLoading(true);
+    const calcularEstatisticas = async () => {
+        setCarregando(true);
         try {
-            const [allStudents, allNotas, allDisciplinas] = await Promise.all([
+            const [todosAlunos, todasNotas, todasDisciplinas] = await Promise.all([
                 apiService.getAlunos(),
                 apiService.getNotas(),
                 apiService.getDisciplinas(),
             ]);
 
-            console.log('Dados carregados para BI:');
-            console.log('   Alunos:', allStudents.length);
-            console.log('   Notas:', allNotas.length);
-            console.log('   Disciplinas:', allDisciplinas.length);
-            console.log('   User ID:', user.id);
-
-            const minhaDisciplina = allDisciplinas.find((d) => {
+            const minhaDisciplina = todasDisciplinas.find((d) => {
                 const profId = d.professor_id || d.professorId || d.professor;
                 return profId == user.id;
             });
             const minhaDisciplinaId = minhaDisciplina?.id;
 
-            // Filtra apenas as notas da disciplina do professor
             const notasParaAnalise = minhaDisciplinaId
-                ? allNotas.filter((n) => {
+                ? todasNotas.filter((n) => {
                     const discId = n.disciplina_id || n.disciplinaId || n.disciplina;
                     return discId == minhaDisciplinaId;
                 })
                 : [];
 
-            const totalStudents = allStudents.length;
+            const totalAlunos = todosAlunos.length;
 
-            // Agrupa notas por aluno - calcula a MÉDIA de todas as notas DAS DISCIPLINAS
-            const studentAveragesMap = {};
+            const mediasAlunos = {};
             notasParaAnalise.forEach((nota) => {
-                const sid = nota.aluno_id || nota.alunoId;
-                const aluno = allStudents.find((a) => a.id === sid);
-
+                const idAluno = nota.aluno_id || nota.alunoId;
+                const aluno = todosAlunos.find((a) => a.id === idAluno);
                 const notaFinal = nota.nota ?? 0;
 
-                if (!studentAveragesMap[sid]) {
-                    studentAveragesMap[sid] = {
-                        id: sid,
-                        name: aluno?.nome || aluno?.name || `Aluno ${sid}`,
-                        totalNotas: notaFinal,
-                        notasCount: 1
+                if (!mediasAlunos[idAluno]) {
+                    mediasAlunos[idAluno] = {
+                        id: idAluno,
+                        nome: aluno?.nome || aluno?.name || `Aluno ${idAluno}`,
+                        somaNotas: notaFinal,
+                        quantidadeNotas: 1
                     };
                 } else {
-                    // Acumula as notas para calcular a média
-                    studentAveragesMap[sid].totalNotas += notaFinal;
-                    studentAveragesMap[sid].notasCount++;
+                    mediasAlunos[idAluno].somaNotas += notaFinal;
+                    mediasAlunos[idAluno].quantidadeNotas++;
                 }
             });
 
-            let totalAverage = 0;
-            let studentsWithGrades = 0;
-            const studentsList = [];
+            let somaMedias = 0;
+            let alunosComNotas = 0;
+            const listaAlunos = [];
 
-            Object.values(studentAveragesMap).forEach((s) => {
-                const avg = s.totalNotas / s.notasCount;
-                studentsList.push({
-                    id: s.id,
-                    name: s.name,
-                    average: avg,
-                    gradesCount: s.notasCount
+            Object.values(mediasAlunos).forEach((aluno) => {
+                const media = aluno.somaNotas / aluno.quantidadeNotas;
+                listaAlunos.push({
+                    id: aluno.id,
+                    nome: aluno.nome,
+                    media: media,
+                    quantidadeNotas: aluno.quantidadeNotas
                 });
-                totalAverage += avg;
-                studentsWithGrades++;
+                somaMedias += media;
+                alunosComNotas++;
             });
 
-            const overallAverage = studentsWithGrades > 0 ? totalAverage / studentsWithGrades : 0;
+            const mediaGeral = alunosComNotas > 0 ? somaMedias / alunosComNotas : 0;
 
-            // NOVA MÉDIA: 7
-            const studentsAboveAverage = studentsList.filter((s) => s.average >= 7).length;
-            const studentsBelowAverage = studentsList.filter((s) => s.average < 7).length;
+            const alunosAprovados = listaAlunos.filter((a) => a.media >= 7).length;
+            const alunosReprovados = listaAlunos.filter((a) => a.media < 7).length;
+            const alunosSemNotas = totalAlunos - alunosComNotas;
 
-            // Alunos sem notas = total - alunos com notas
-            const studentsWithoutGrades = totalStudents - studentsWithGrades;
+            const totalAprovados = alunosAprovados;
+            const totalReprovados = alunosReprovados + alunosSemNotas;
 
-            // Considera alunos sem notas como reprovados
-            const totalApproved = studentsAboveAverage;
-            const totalFailed = studentsBelowAverage + studentsWithoutGrades;
-
-            // Top 5 melhores alunos
-            const topStudents = [...studentsList]
-                .sort((a, b) => b.average - a.average)
+            const melhoresAlunos = [...listaAlunos]
+                .sort((a, b) => b.media - a.media)
                 .slice(0, 5);
 
-            // Distribuição das notas (ajustada para média 7)
-            const gradeDistribution = { '0-2': 0, '2-4': 0, '4-7': 0, '7-8': 0, '8-10': 0 };
+            const distribuicaoNotas = { '0-2': 0, '2-4': 0, '4-7': 0, '7-8': 0, '8-10': 0 };
             notasParaAnalise.forEach((nota) => {
-                const v = nota.nota ?? nota.media ?? 0;
-                if (v < 2) gradeDistribution['0-2']++;
-                else if (v < 4) gradeDistribution['2-4']++;
-                else if (v < 7) gradeDistribution['4-7']++;
-                else if (v < 8) gradeDistribution['7-8']++;
-                else gradeDistribution['8-10']++;
+                const valor = nota.nota ?? nota.media ?? 0;
+                if (valor < 2) distribuicaoNotas['0-2']++;
+                else if (valor < 4) distribuicaoNotas['2-4']++;
+                else if (valor < 7) distribuicaoNotas['4-7']++;
+                else if (valor < 8) distribuicaoNotas['7-8']++;
+                else distribuicaoNotas['8-10']++;
             });
 
-            // Performance por disciplina
-            const subjectPerformance = {};
-            allNotas.forEach((nota) => {
-                const disc = allDisciplinas.find((d) => d.id === nota.disciplina_id);
-                const nomeDisciplina = disc?.nome || `Disciplina ${nota.disciplina_id}`;
-                if (!subjectPerformance[nomeDisciplina]) {
-                    subjectPerformance[nomeDisciplina] = { total: 0, count: 0 };
+            const desempenhoDisciplinas = {};
+            todasNotas.forEach((nota) => {
+                const disciplina = todasDisciplinas.find((d) => d.id === nota.disciplina_id);
+                const nomeDisciplina = disciplina?.nome || `Disciplina ${nota.disciplina_id}`;
+                if (!desempenhoDisciplinas[nomeDisciplina]) {
+                    desempenhoDisciplinas[nomeDisciplina] = { soma: 0, quantidade: 0 };
                 }
-                const v = nota.nota ?? nota.media ?? 0;
-                subjectPerformance[nomeDisciplina].total += v;
-                subjectPerformance[nomeDisciplina].count++;
+                const valor = nota.nota ?? nota.media ?? 0;
+                desempenhoDisciplinas[nomeDisciplina].soma += valor;
+                desempenhoDisciplinas[nomeDisciplina].quantidade++;
             });
 
-            // Tendência mensal
-            const monthlyTrend = {};
+            const tendenciaMensal = {};
             notasParaAnalise.forEach((nota) => {
-                const rawDate = nota.dataAvaliacao || nota.data_avaliacao || nota.date;
-                if (!rawDate) return;
-                const month = new Date(rawDate).toLocaleDateString('pt-BR', {
+                const dataAvaliacao = nota.dataAvaliacao || nota.data_avaliacao || nota.date;
+                if (!dataAvaliacao) return;
+                const mes = new Date(dataAvaliacao).toLocaleDateString('pt-BR', {
                     month: 'short',
                     year: 'numeric',
                 });
-                if (!monthlyTrend[month]) monthlyTrend[month] = { total: 0, count: 0 };
-                const v = nota.nota ?? nota.media ?? 0;
-                monthlyTrend[month].total += v;
-                monthlyTrend[month].count++;
+                if (!tendenciaMensal[mes]) tendenciaMensal[mes] = { soma: 0, quantidade: 0 };
+                const valor = nota.nota ?? nota.media ?? 0;
+                tendenciaMensal[mes].soma += valor;
+                tendenciaMensal[mes].quantidade++;
             });
 
-            const scatterData = studentsList.map((s, index) => ({
-                x: index + 1,
-                y: s.average,
-                name: s.name,
-                id: s.id
+            const dadosDispersao = listaAlunos.map((aluno, indice) => ({
+                x: indice + 1,
+                y: aluno.media,
+                nome: aluno.nome,
+                id: aluno.id
             }));
 
-            const stdDev = calculateStdDev(studentsList.map(s => s.average), overallAverage);
-            const outliers = studentsList.filter(s => {
-                const diff = Math.abs(s.average - overallAverage);
-                return diff > stdDev * 1.5;
+            const desvioPadrao = calcularDesvioPadrao(listaAlunos.map(a => a.media), mediaGeral);
+            const outliers = listaAlunos.filter(aluno => {
+                const diferenca = Math.abs(aluno.media - mediaGeral);
+                return diferenca > desvioPadrao * 1.5;
             });
 
-            setStats({
-                totalStudents,
-                studentsAboveAverage: totalApproved,
-                studentsBelowAverage: totalFailed,
-                averageGrade: overallAverage.toFixed(2),
-                topStudents,
-                gradeDistribution,
-                subjectPerformance,
-                monthlyTrend,
-                scatterData,
+            setEstatisticas({
+                totalAlunos,
+                alunosAprovados: totalAprovados,
+                alunosReprovados: totalReprovados,
+                mediaGeral: mediaGeral.toFixed(2),
+                melhoresAlunos,
+                distribuicaoNotas,
+                desempenhoDisciplinas,
+                tendenciaMensal,
+                dadosDispersao,
                 outliers,
             });
-        } catch (error) {
-            console.error('Erro ao calcular estatísticas BI:', error);
+        } catch (erro) {
+
         } finally {
-            setLoading(false);
+            setCarregando(false);
         }
     };
 
-    // Calcula desvio padrão
-    const calculateStdDev = (values, mean) => {
-        if (values.length === 0) return 0;
-        const squareDiffs = values.map(value => Math.pow(value - mean, 2));
-        const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / values.length;
-        return Math.sqrt(avgSquareDiff);
+    const calcularDesvioPadrao = (valores, media) => {
+        if (valores.length === 0) return 0;
+        const diferencasQuadradas = valores.map(valor => Math.pow(valor - media, 2));
+        const mediaDiferencas = diferencasQuadradas.reduce((a, b) => a + b, 0) / valores.length;
+        return Math.sqrt(mediaDiferencas);
     };
 
-    // Dados dos gráficos
-    const performanceData = {
+    const dadosDesempenho = {
         labels: ['Aprovados (≥7)', 'Reprovados (<7)'],
         datasets: [
             {
-                data: [stats.studentsAboveAverage, stats.studentsBelowAverage],
+                data: [estatisticas.alunosAprovados, estatisticas.alunosReprovados],
                 backgroundColor: ['#28a745', '#dc3545'],
                 borderColor: ['#28a745', '#dc3545'],
                 borderWidth: 2,
@@ -227,12 +207,12 @@ export const BIDashboard = ({ user }) => {
         ],
     };
 
-    const distributionData = {
+    const dadosDistribuicao = {
         labels: ['0-2', '2-4', '4-7', '7-8', '8-10'],
         datasets: [
             {
                 label: 'Quantidade de Notas',
-                data: Object.values(stats.gradeDistribution),
+                data: Object.values(estatisticas.distribuicaoNotas),
                 backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#28a745', '#17a2b8'],
                 borderColor: ['#dc3545', '#fd7e14', '#ffc107', '#28a745', '#17a2b8'],
                 borderWidth: 2,
@@ -240,13 +220,12 @@ export const BIDashboard = ({ user }) => {
         ],
     };
 
-    // Gráfico de dispersão com outliers destacados (SCATTER)
-    const scatterChartData = {
+    const dadosDispersaoGrafico = {
         datasets: [
             {
                 label: 'Alunos Regulares',
-                data: stats.scatterData.filter(s =>
-                    !stats.outliers.find(o => o.id === s.id)
+                data: estatisticas.dadosDispersao.filter(aluno =>
+                    !estatisticas.outliers.find(o => o.id === aluno.id)
                 ),
                 backgroundColor: 'rgba(102, 126, 234, 0.6)',
                 borderColor: '#667eea',
@@ -255,8 +234,8 @@ export const BIDashboard = ({ user }) => {
             },
             {
                 label: 'Outliers (Atenção Especial)',
-                data: stats.scatterData.filter(s =>
-                    stats.outliers.find(o => o.id === s.id)
+                data: estatisticas.dadosDispersao.filter(aluno =>
+                    estatisticas.outliers.find(o => o.id === aluno.id)
                 ),
                 backgroundColor: 'rgba(255, 99, 132, 0.8)',
                 borderColor: '#ff6384',
@@ -267,7 +246,7 @@ export const BIDashboard = ({ user }) => {
         ],
     };
 
-    const scatterOptions = {
+    const opcoesDispersao = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -277,9 +256,9 @@ export const BIDashboard = ({ user }) => {
             },
             tooltip: {
                 callbacks: {
-                    label: function (context) {
-                        const point = context.raw;
-                        return `${point.name}: ${point.y.toFixed(2)}`;
+                    label: function (contexto) {
+                        const ponto = contexto.raw;
+                        return `${ponto.nome}: ${ponto.y.toFixed(2)}`;
                     }
                 }
             }
@@ -302,41 +281,41 @@ export const BIDashboard = ({ user }) => {
         }
     };
 
-    const subjectLabels = Object.keys(stats.subjectPerformance);
-    const subjectAverages = subjectLabels.map((subject) => {
-        const perf = stats.subjectPerformance[subject];
-        return (perf.total / perf.count).toFixed(2);
+    const rotulosDisciplinas = Object.keys(estatisticas.desempenhoDisciplinas);
+    const mediasDisciplinas = rotulosDisciplinas.map((disciplina) => {
+        const desempenho = estatisticas.desempenhoDisciplinas[disciplina];
+        return (desempenho.soma / desempenho.quantidade).toFixed(2);
     });
 
-    const subjectData = {
-        labels: subjectLabels,
+    const dadosDisciplinas = {
+        labels: rotulosDisciplinas,
         datasets: [
             {
                 label: 'Média por Disciplina',
-                data: subjectAverages,
-                backgroundColor: subjectLabels.map((subject) =>
-                    subject === (user.subject || '') ? '#2135A4' : '#9FEEE6'
+                data: mediasDisciplinas,
+                backgroundColor: rotulosDisciplinas.map((disciplina) =>
+                    disciplina === (user.subject || '') ? '#2135A4' : '#9FEEE6'
                 ),
-                borderColor: subjectLabels.map((subject) =>
-                    subject === (user.subject || '') ? '#2135A4' : '#9FEEE6'
+                borderColor: rotulosDisciplinas.map((disciplina) =>
+                    disciplina === (user.subject || '') ? '#2135A4' : '#9FEEE6'
                 ),
                 borderWidth: 2,
             },
         ],
     };
 
-    const monthLabels = Object.keys(stats.monthlyTrend);
-    const monthAverages = monthLabels.map((month) => {
-        const trend = stats.monthlyTrend[month];
-        return (trend.total / trend.count).toFixed(2);
+    const rotulosMeses = Object.keys(estatisticas.tendenciaMensal);
+    const mediasMensais = rotulosMeses.map((mes) => {
+        const tendencia = estatisticas.tendenciaMensal[mes];
+        return (tendencia.soma / tendencia.quantidade).toFixed(2);
     });
 
-    const trendData = {
-        labels: monthLabels,
+    const dadosTendencia = {
+        labels: rotulosMeses,
         datasets: [
             {
                 label: 'Média Mensal',
-                data: monthAverages,
+                data: mediasMensais,
                 borderColor: '#667eea',
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 borderWidth: 3,
@@ -346,7 +325,7 @@ export const BIDashboard = ({ user }) => {
         ],
     };
 
-    const chartOptions = {
+    const opcoesGrafico = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -357,7 +336,7 @@ export const BIDashboard = ({ user }) => {
         },
     };
 
-    if (loading) {
+    if (carregando) {
         return (
             <div className="bi-dashboard">
                 <div className="bi-header">
@@ -375,92 +354,85 @@ export const BIDashboard = ({ user }) => {
                 <p className="bi-subtitle">Análise de Desempenho - {user.subject}</p>
             </div>
 
-            {/* Cards de Resumo */}
             <div className="stats-cards">
                 <div className="stat-card primary">
-                    <div className="stat-icon">👥</div>
                     <div className="stat-content">
                         <h3>Total de Alunos</h3>
-                        <p className="stat-value">{stats.totalStudents}</p>
+                        <p className="stat-value">{estatisticas.totalAlunos}</p>
                     </div>
                 </div>
                 <div className="stat-card success">
-                    <div className="stat-icon">✓</div>
                     <div className="stat-content">
-                        <h3>Aprovados (≥7)</h3>
-                        <p className="stat-value">{stats.studentsAboveAverage}</p>
+                        <h3>Aprovados</h3>
+                        <p className="stat-value">{estatisticas.alunosAprovados}</p>
                     </div>
                 </div>
                 <div className="stat-card danger">
-                    <div className="stat-icon">✕</div>
                     <div className="stat-content">
-                        <h3>Reprovados (&lt;7)</h3>
-                        <p className="stat-value">{stats.studentsBelowAverage}</p>
+                        <h3>Reprovados</h3>
+                        <p className="stat-value">{estatisticas.alunosReprovados}</p>
                     </div>
                 </div>
                 <div className="stat-card info">
-                    <div className="stat-icon">📊</div>
                     <div className="stat-content">
                         <h3>Média Geral</h3>
-                        <p className="stat-value">{stats.averageGrade}</p>
+                        <p className="stat-value">{estatisticas.mediaGeral}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Gráficos */}
             <div className="charts-grid">
                 <div className="chart-card">
                     <h3>Desempenho dos Alunos</h3>
                     <div className="chart-container">
-                        <Doughnut data={performanceData} options={chartOptions} />
+                        <Doughnut data={dadosDesempenho} options={opcoesGrafico} />
                     </div>
                 </div>
 
                 <div className="chart-card">
-                    <h3>Distribuição de Notas (N1 - N2)</h3>
+                    <h3>Distribuição de Notas</h3>
                     <div className="chart-container">
-                        <Bar data={distributionData} options={chartOptions} />
+                        <Bar data={dadosDistribuicao} options={opcoesGrafico} />
                     </div>
                 </div>
 
                 <div className="chart-card wide">
                     <h3>Dispersão de Alunos - Identificação de Outliers</h3>
                     <div className="chart-container">
-                        <Scatter data={scatterChartData} options={scatterOptions} />
+                        <Scatter data={dadosDispersaoGrafico} options={opcoesDispersao} />
                     </div>
                 </div>
 
                 <div className="chart-card wide">
                     <h3>Comparação entre Disciplinas</h3>
                     <div className="chart-container">
-                        <Bar data={subjectData} options={chartOptions} />
+                        <Bar data={dadosDisciplinas} options={opcoesGrafico} />
                     </div>
                 </div>
 
                 <div className="chart-card wide">
                     <h3>Tendência de Desempenho</h3>
                     <div className="chart-container">
-                        <Line data={trendData} options={chartOptions} />
+                        <Line data={dadosTendencia} options={opcoesGrafico} />
                     </div>
                 </div>
             </div>
 
-            {/* Outliers Detectados */}
-            {stats.outliers.length > 0 && (
+            {estatisticas.outliers.length > 0 && (
                 <div className="outliers-section">
-                    <h3>Alunos com Desempenho Atípico (Outliers)</h3>
+                    <h3>Alunos com Desempenho Atípico</h3>
                     <p className="outliers-description">
                         Estes alunos apresentam desempenho significativamente diferente da média da turma e merecem atenção especial.
                     </p>
                     <div className="outliers-list">
-                        {stats.outliers.map((student, index) => (
-                            <div key={index} className="outlier-card">
+                        {estatisticas.outliers.map((aluno, indice) => (
+                            <div key={indice} className="outlier-card">
                                 <div className="outlier-info">
-                                    <h4>{student.name}</h4>
+                                    <h4>{aluno.nome}</h4>
                                     <p className="outlier-average">
-                                        Média: {student.average.toFixed(2)}
-                                        <span className={student.average > parseFloat(stats.averageGrade) ? 'positive' : 'negative'}>
-                                            {student.average > parseFloat(stats.averageGrade)
+                                        Média: {aluno.media.toFixed(2)}
+                                        <span className={aluno.media > parseFloat(estatisticas.mediaGeral) ? 'positive' : 'negative'}>
+                                            {aluno.media > parseFloat(estatisticas.mediaGeral)
                                                 ? ' (Acima da média)'
                                                 : ' (Abaixo da média)'}
                                         </span>
@@ -472,21 +444,15 @@ export const BIDashboard = ({ user }) => {
                 </div>
             )}
 
-            {/* Top 5 Alunos */}
             <div className="top-students-section">
-                <h3>🏆 Top 5 Melhores Alunos (COM BASE EM TODOS OS RESULTADOS)</h3>
+                <h3>Top 5 Melhores Alunos</h3>
                 <div className="top-students-list">
-                    {stats.topStudents.map((student, index) => (
-                        <div key={index} className={`top-student-card rank-${index + 1}`}>
-                            <div className="rank-badge">{index + 1}º</div>
+                    {estatisticas.melhoresAlunos.map((aluno, indice) => (
+                        <div key={indice} className={`top-student-card rank-${indice + 1}`}>
+                            <div className="rank-badge">{indice + 1}º</div>
                             <div className="student-info">
-                                <h4>{student.name}</h4>
-                                <p className="student-average">Média: {student.average.toFixed(2)}</p>
-                            </div>
-                            <div className="medal">
-                                {index === 0 && '🥇'}
-                                {index === 1 && '🥈'}
-                                {index === 2 && '🥉'}
+                                <h4>{aluno.nome}</h4>
+                                <p className="student-average">Média: {aluno.media.toFixed(2)}</p>
                             </div>
                         </div>
                     ))}

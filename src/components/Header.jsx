@@ -3,7 +3,7 @@ import { FaUser } from 'react-icons/fa';
 import '../styles/Header.css';
 
 export const Header = ({ user, onLogout, activeTab, setActiveTab }) => {
-    const [menuOpen, setMenuOpen] = useState(false);
+    const [menuAberto, setMenuAberto] = useState(false);
 
     return (
         <header className="header">
@@ -62,7 +62,7 @@ export const Header = ({ user, onLogout, activeTab, setActiveTab }) => {
                     <div className="user-menu">
                         <button
                             className="user-button"
-                            onClick={() => setMenuOpen(!menuOpen)}
+                            onClick={() => setMenuAberto(!menuAberto)}
                         >
                             <div className="user-info-header">
                                 <span className="user-name-header">{user.name}</span>
@@ -75,7 +75,7 @@ export const Header = ({ user, onLogout, activeTab, setActiveTab }) => {
                             </div>
                         </button>
 
-                        {menuOpen && (
+                        {menuAberto && (
                             <div className="dropdown-menu">
                                 <div className="dropdown-item user-info">
                                     <strong>{user.name}</strong>

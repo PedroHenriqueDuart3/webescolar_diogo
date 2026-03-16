@@ -7,158 +7,134 @@ import { BIDashboard } from './BIDashboard';
 import '../styles/ProfessorDashboard.css';
 
 export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [students, setStudents] = useState([]);
-    const [selectedStudent, setSelectedStudent] = useState(null);
-    const [showModal, setShowModal] = useState(false);
-    const [modalType, setModalType] = useState('');
-    const [formData, setFormData] = useState({ observation: '', nota1: '', nota2: '' });
-    const [editingGrades, setEditingGrades] = useState(false);
-    const [gradesData, setGradesData] = useState([]);
-    const [editingObservations, setEditingObservations] = useState(false);
-    const [editingCommentId, setEditingCommentId] = useState(null);
-    const [editCommentText, setEditCommentText] = useState('');
-    const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
+    const [termoBusca, setTermoBusca] = useState('');
+    const [alunos, setAlunos] = useState([]);
+    const [alunoSelecionado, setAlunoSelecionado] = useState(null);
+    const [exibirModal, setExibirModal] = useState(false);
+    const [tipoModal, setTipoModal] = useState('');
+    const [dadosFormulario, setDadosFormulario] = useState({ observation: '', nota1: '', nota2: '' });
+    const [editandoNotas, setEditandoNotas] = useState(false);
+    const [dadosNotas, setDadosNotas] = useState([]);
+    const [editandoObservacoes, setEditandoObservacoes] = useState(false);
+    const [idComentarioEditando, setIdComentarioEditando] = useState(null);
+    const [textoComentarioEditando, setTextoComentarioEditando] = useState('');
+    const [modalAlerta, setModalAlerta] = useState({ show: false, message: '', type: 'info' });
     const [disciplina, setDisciplina] = useState(null);
 
     useEffect(() => {
-        loadStudents();
-        loadDisciplina();
+        carregarAlunos();
+        carregarDisciplina();
     }, []);
 
     useEffect(() => {
-        loadStudents();
+        carregarAlunos();
     }, [activeTab]);
 
-    // ──────────────────────────────────────────────
-    //  Carregamento de dados via API
-    // ──────────────────────────────────────────────
-
-    const loadStudents = async () => {
+    const carregarAlunos = async () => {
         try {
-            const allStudents = await apiService.getAlunos();
-            // Normaliza campo "nome" → "name" para compatibilidade interna
-            const normalized = allStudents.map((s) => ({
-                ...s,
-                name: s.nome || s.name,
+            const todosAlunos = await apiService.getAlunos();
+            const alunosNormalizados = todosAlunos.map((aluno) => ({
+                ...aluno,
+                name: aluno.nome || aluno.name,
             }));
-            setStudents(normalized);
-        } catch (error) {
-            console.error('Erro ao carregar alunos:', error);
-            showAlert('Erro ao carregar alunos', 'error');
+            setAlunos(alunosNormalizados);
+        } catch (erro) {
+            exibirAlerta('Erro ao carregar alunos', 'error');
         }
     };
 
-    const loadDisciplina = async () => {
+    const carregarDisciplina = async () => {
         try {
-            // Busca disciplinas e filtra pela que pertence a este professor
             const disciplinas = await apiService.getDisciplinas();
-            const disc = disciplinas.find((d) => d.professor_id === user.id);
-            setDisciplina(disc || null);
-        } catch (error) {
-            console.error('Erro ao carregar disciplina:', error);
+            const minhaDisc = disciplinas.find((d) => d.professor_id === user.id);
+            setDisciplina(minhaDisc || null);
+        } catch (erro) {
+
         }
     };
 
-    // ──────────────────────────────────────────────
-    //  Helpers / UI
-    // ──────────────────────────────────────────────
-
-    const showAlert = (message, type = 'info') => {
-        setAlertModal({ show: true, message, type });
+    const exibirAlerta = (mensagem, tipo = 'info') => {
+        setModalAlerta({ show: true, message: mensagem, type: tipo });
     };
 
-    const closeAlert = () => setAlertModal({ show: false, message: '', type: 'info' });
+    const fecharAlerta = () => setModalAlerta({ show: false, message: '', type: 'info' });
 
-    const filteredStudents = students.filter(
-        (student) =>
-            (student.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (student.matricula || '').includes(searchTerm)
+    const alunosFiltrados = alunos.filter(
+        (aluno) =>
+            (aluno.name || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+            (aluno.matricula || '').includes(termoBusca)
     );
 
-    const openModal = (student, type) => {
-        setSelectedStudent(student);
-        setModalType(type);
-        setShowModal(true);
+    const abrirModal = (aluno, tipo) => {
+        setAlunoSelecionado(aluno);
+        setTipoModal(tipo);
+        setExibirModal(true);
     };
 
-    const closeModal = () => {
-        setShowModal(false);
-        setSelectedStudent(null);
-        setFormData({ observation: '', nota1: '', nota2: '' });
+    const fecharModal = () => {
+        setExibirModal(false);
+        setAlunoSelecionado(null);
+        setDadosFormulario({ observation: '', nota1: '', nota2: '' });
     };
 
-    // ──────────────────────────────────────────────
-    //  Observações
-    // ──────────────────────────────────────────────
-
-    const handleSubmitObservation = async (e) => {
+    const processarEnvioObservacao = async (e) => {
         e.preventDefault();
         try {
-            // Persiste na API
-            const novaObs = await apiService.createObservacao({
-                observacao: formData.observation,
+            const novaObservacao = await apiService.createObservacao({
+                observacao: dadosFormulario.observation,
                 data_observacao: new Date().toISOString().split('T')[0],
-                aluno_id: selectedStudent.id,
+                aluno_id: alunoSelecionado.id,
                 professor_id: user.id,
             });
 
-            // Espelha no storage local para exibição imediata
-            const newComment = {
-                id: novaObs?.id || Date.now(),
-                studentId: selectedStudent.id,
-                studentName: selectedStudent.name,
-                matricula: selectedStudent.matricula,
+            const comentarioLocal = {
+                id: novaObservacao?.id || Date.now(),
+                studentId: alunoSelecionado.id,
+                studentName: alunoSelecionado.name,
+                matricula: alunoSelecionado.matricula,
                 subject: user.subject,
                 professorName: user.name,
-                observation: formData.observation,
+                observation: dadosFormulario.observation,
                 date: new Date().toISOString(),
             };
-            storage.addComment(newComment);
+            storage.addComment(comentarioLocal);
 
-            showAlert('Observação adicionada com sucesso!', 'success');
-            closeModal();
-        } catch (error) {
-            console.error('Erro ao adicionar observação:', error);
-            showAlert('Erro ao adicionar observação', 'error');
+            exibirAlerta('Observação adicionada com sucesso!', 'success');
+            fecharModal();
+        } catch (erro) {
+            exibirAlerta('Erro ao adicionar observação', 'error');
         }
     };
 
-    // ──────────────────────────────────────────────
-    //  Notas (modal de adição unitária)
-    // ──────────────────────────────────────────────
-
-    const handleSubmitGrade = async (e) => {
+    const processarEnvioNota = async (e) => {
         e.preventDefault();
 
-        const nota1 = parseFloat(formData.nota1);
-        const nota2 = parseFloat(formData.nota2);
+        const nota1 = parseFloat(dadosFormulario.nota1);
+        const nota2 = parseFloat(dadosFormulario.nota2);
 
         if (isNaN(nota1) || isNaN(nota2) || nota1 < 0 || nota1 > 10 || nota2 < 0 || nota2 > 10) {
-            showAlert('Notas devem estar entre 0 e 10', 'error');
+            exibirAlerta('Notas devem estar entre 0 e 10', 'error');
             return;
         }
 
         const media = parseFloat(((nota1 + nota2) / 2).toFixed(2));
 
         try {
-            const disciplinaId = disciplina?.id || 1;
+            const idDisciplina = disciplina?.id || 1;
 
-            // Persiste na API
             const novaNota = await apiService.createNota({
                 nota: media,
                 data_avaliacao: new Date().toISOString().split('T')[0],
-                aluno_id: selectedStudent.id,
+                aluno_id: alunoSelecionado.id,
                 professor_id: user.id,
-                disciplina_id: disciplinaId,
+                disciplina_id: idDisciplina,
             });
 
-            // Espelha no storage local
-            const newGrade = {
+            const notaLocal = {
                 id: novaNota?.id || Date.now(),
-                studentId: selectedStudent.id,
-                studentName: selectedStudent.name,
-                matricula: selectedStudent.matricula,
+                studentId: alunoSelecionado.id,
+                studentName: alunoSelecionado.name,
+                matricula: alunoSelecionado.matricula,
                 subject: user.subject,
                 professorName: user.name,
                 nota1,
@@ -166,165 +142,148 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                 media,
                 date: new Date().toISOString(),
             };
-            storage.addGrade(newGrade);
+            storage.addGrade(notaLocal);
 
-            showAlert('Notas adicionadas com sucesso!', 'success');
-            closeModal();
-            loadStudents();
-        } catch (error) {
-            console.error('Erro ao adicionar notas:', error);
-            showAlert('Erro ao adicionar notas', 'error');
+            exibirAlerta('Notas adicionadas com sucesso!', 'success');
+            fecharModal();
+            carregarAlunos();
+        } catch (erro) {
+            exibirAlerta('Erro ao adicionar notas', 'error');
         }
     };
 
-    // ──────────────────────────────────────────────
-    //  Notas (tabela editável em massa)
-    // ──────────────────────────────────────────────
-
-    const getStudentGrades = (studentId) => {
-        const grades = storage.getGrades();
-        return grades.filter((g) => g.studentId === studentId && g.subject === user.subject);
+    const obterNotasAluno = (idAluno) => {
+        const notas = storage.getGrades();
+        return notas.filter((n) => n.studentId === idAluno && n.subject === user.subject);
     };
 
-    const getAllStudentsWithGrades = (studentsList = students) => {
-        return studentsList.map((student) => {
-            const grades = getStudentGrades(student.id);
-            const latestGrade = grades.length > 0 ? grades[grades.length - 1] : null;
+    const obterTodosAlunosComNotas = (listaAlunos = alunos) => {
+        return listaAlunos.map((aluno) => {
+            const notas = obterNotasAluno(aluno.id);
+            const ultimaNota = notas.length > 0 ? notas[notas.length - 1] : null;
             return {
-                ...student,
-                nota1: latestGrade?.nota1 ?? null,
-                nota2: latestGrade?.nota2 ?? null,
-                media: latestGrade?.media ?? null,
-                gradeId: latestGrade?.id ?? null,
+                ...aluno,
+                nota1: ultimaNota?.nota1 ?? null,
+                nota2: ultimaNota?.nota2 ?? null,
+                media: ultimaNota?.media ?? null,
+                gradeId: ultimaNota?.id ?? null,
             };
         });
     };
 
-    const handleEditGrades = () => {
-        setGradesData(getAllStudentsWithGrades(students));
-        setEditingGrades(true);
+    const iniciarEdicaoNotas = () => {
+        setDadosNotas(obterTodosAlunosComNotas(alunos));
+        setEditandoNotas(true);
     };
 
-    const handleCancelEdit = () => {
-        setEditingGrades(false);
-        setGradesData([]);
+    const cancelarEdicaoNotas = () => {
+        setEditandoNotas(false);
+        setDadosNotas([]);
     };
 
-    const handleGradeChange = (studentId, field, value) => {
-        setGradesData((prev) =>
-            prev.map((student) => {
-                if (student.id !== studentId) return student;
-                const updated = { ...student, [field]: parseFloat(value) || null };
-                if (updated.nota1 !== null && updated.nota2 !== null) {
-                    updated.media = ((updated.nota1 + updated.nota2) / 2).toFixed(2);
+    const alterarNota = (idAluno, campo, valor) => {
+        setDadosNotas((anterior) =>
+            anterior.map((aluno) => {
+                if (aluno.id !== idAluno) return aluno;
+                const atualizado = { ...aluno, [campo]: parseFloat(valor) || null };
+                if (atualizado.nota1 !== null && atualizado.nota2 !== null) {
+                    atualizado.media = ((atualizado.nota1 + atualizado.nota2) / 2).toFixed(2);
                 }
-                return updated;
+                return atualizado;
             })
         );
     };
 
-    const handleSaveGrades = async () => {
+    const salvarNotas = async () => {
         try {
-            const disciplinaId = disciplina?.id || 1;
+            const idDisciplina = disciplina?.id || 1;
 
-            for (const student of gradesData) {
-                if (student.nota1 === null || student.nota2 === null) continue;
+            for (const aluno of dadosNotas) {
+                if (aluno.nota1 === null || aluno.nota2 === null) continue;
 
-                const media = parseFloat(student.media);
+                const media = parseFloat(aluno.media);
 
-                if (!student.gradeId) {
-                    // Nova nota → cria na API
+                if (!aluno.gradeId) {
                     const novaNota = await apiService.createNota({
                         nota: media,
                         data_avaliacao: new Date().toISOString().split('T')[0],
-                        aluno_id: student.id,
+                        aluno_id: aluno.id,
                         professor_id: user.id,
-                        disciplina_id: disciplinaId,
+                        disciplina_id: idDisciplina,
                     });
 
-                    const newGrade = {
+                    const notaLocal = {
                         id: novaNota?.id || Date.now() + Math.random(),
-                        studentId: student.id,
-                        studentName: student.name,
-                        matricula: student.matricula,
+                        studentId: aluno.id,
+                        studentName: aluno.name,
+                        matricula: aluno.matricula,
                         subject: user.subject,
                         professorName: user.name,
-                        nota1: student.nota1,
-                        nota2: student.nota2,
+                        nota1: aluno.nota1,
+                        nota2: aluno.nota2,
                         media,
                         date: new Date().toISOString(),
                     };
-                    storage.addGrade(newGrade);
+                    storage.addGrade(notaLocal);
                 } else {
-                    // Nota existente → atualiza no storage local
-                    // (a API não expõe PUT /notas, então mantemos só local)
-                    const updatedGrade = {
-                        id: student.gradeId,
-                        studentId: student.id,
-                        studentName: student.name,
-                        matricula: student.matricula,
+                    const notaAtualizada = {
+                        id: aluno.gradeId,
+                        studentId: aluno.id,
+                        studentName: aluno.name,
+                        matricula: aluno.matricula,
                         subject: user.subject,
                         professorName: user.name,
-                        nota1: student.nota1,
-                        nota2: student.nota2,
+                        nota1: aluno.nota1,
+                        nota2: aluno.nota2,
                         media,
                         date: new Date().toISOString(),
                     };
-                    storage.updateGrade(student.gradeId, updatedGrade);
+                    storage.updateGrade(aluno.gradeId, notaAtualizada);
                 }
             }
 
-            showAlert('Notas salvas com sucesso!', 'success');
-            setEditingGrades(false);
-            setGradesData([]);
-        } catch (error) {
-            console.error('Erro ao salvar notas:', error);
-            showAlert('Erro ao salvar notas', 'error');
+            exibirAlerta('Notas salvas com sucesso!', 'success');
+            setEditandoNotas(false);
+            setDadosNotas([]);
+        } catch (erro) {
+            exibirAlerta('Erro ao salvar notas', 'error');
         }
     };
 
-    // ──────────────────────────────────────────────
-    //  Observações (edição inline)
-    // ──────────────────────────────────────────────
+    const iniciarEdicaoObservacoes = () => setEditandoObservacoes(true);
 
-    const handleEditObservations = () => setEditingObservations(true);
-
-    const handleCancelEditObservations = () => {
-        setEditingObservations(false);
-        setEditingCommentId(null);
-        setEditCommentText('');
+    const cancelarEdicaoObservacoes = () => {
+        setEditandoObservacoes(false);
+        setIdComentarioEditando(null);
+        setTextoComentarioEditando('');
     };
 
-    const handleStartEditComment = (comment) => {
-        setEditingCommentId(comment.id);
-        setEditCommentText(comment.observation);
+    const iniciarEdicaoComentario = (comentario) => {
+        setIdComentarioEditando(comentario.id);
+        setTextoComentarioEditando(comentario.observation);
     };
 
-    const handleSaveComment = (commentId) => {
-        storage.updateComment(commentId, { observation: editCommentText });
-        setEditingCommentId(null);
-        setEditCommentText('');
-        showAlert('Observação atualizada com sucesso!', 'success');
+    const salvarComentario = (idComentario) => {
+        storage.updateComment(idComentario, { observation: textoComentarioEditando });
+        setIdComentarioEditando(null);
+        setTextoComentarioEditando('');
+        exibirAlerta('Observação atualizada com sucesso!', 'success');
     };
 
-    const handleDeleteComment = (commentId) => {
+    const deletarComentario = (idComentario) => {
         if (window.confirm('Tem certeza que deseja deletar esta observação?')) {
-            storage.deleteComment(commentId);
-            showAlert('Observação deletada com sucesso!', 'success');
+            storage.deleteComment(idComentario);
+            exibirAlerta('Observação deletada com sucesso!', 'success');
         }
     };
 
-    const hasGrades = () => {
-        return storage.getGrades().some((g) => g.subject === user.subject);
+    const possuiNotas = () => {
+        return storage.getGrades().some((n) => n.subject === user.subject);
     };
 
-    const hasObservations = () => {
+    const possuiObservacoes = () => {
         return storage.getComments().some((c) => c.subject === user.subject);
     };
-
-    // ──────────────────────────────────────────────
-    //  Render
-    // ──────────────────────────────────────────────
 
     return (
         <div className="professor-dashboard">
@@ -334,36 +293,35 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                     <input
                         type="text"
                         placeholder="Procurar aluno"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={termoBusca}
+                        onChange={(e) => setTermoBusca(e.target.value)}
                     />
                 </div>
 
-                {/* ── ABA ALUNOS ── */}
                 {activeTab === 'alunos' && (
                     <div className="students-grid">
-                        {filteredStudents.map((student) => (
-                            <div key={student.id} className="student-card">
+                        {alunosFiltrados.map((aluno) => (
+                            <div key={aluno.id} className="student-card">
                                 <div className="student-card-header">
-                                    <h3>{student.name}</h3>
-                                    <p className="matricula">Matrícula: {student.matricula}</p>
+                                    <h3>{aluno.name}</h3>
+                                    <p className="matricula">Matrícula: {aluno.matricula}</p>
                                 </div>
                                 <div className="student-card-actions">
                                     <button
                                         className="btn-action btn-add-grades"
-                                        onClick={() => openModal(student, 'addGrades')}
+                                        onClick={() => abrirModal(aluno, 'addGrades')}
                                     >
                                         Adicionar Notas
                                     </button>
                                     <button
                                         className="btn-action btn-grades"
-                                        onClick={() => openModal(student, 'grades')}
+                                        onClick={() => abrirModal(aluno, 'grades')}
                                     >
                                         Visualizar Notas
                                     </button>
                                     <button
                                         className="btn-action btn-observation"
-                                        onClick={() => openModal(student, 'observation')}
+                                        onClick={() => abrirModal(aluno, 'observation')}
                                     >
                                         Adicionar Observação
                                     </button>
@@ -373,28 +331,27 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                     </div>
                 )}
 
-                {/* ── ABA NOTAS ── */}
                 {activeTab === 'notas' && (
                     <div className="grades-section">
                         <div className="grades-header">
-                            {!editingGrades ? (
+                            {!editandoNotas ? (
                                 <button
                                     className="btn-edit-grades"
-                                    onClick={handleEditGrades}
-                                    disabled={!hasGrades()}
+                                    onClick={iniciarEdicaoNotas}
+                                    disabled={!possuiNotas()}
                                     style={{
-                                        background: !hasGrades() ? '#6c757d' : '#2135A4',
-                                        cursor: !hasGrades() ? 'not-allowed' : 'pointer',
+                                        background: !possuiNotas() ? '#6c757d' : '#2135A4',
+                                        cursor: !possuiNotas() ? 'not-allowed' : 'pointer',
                                     }}
                                 >
                                     <FaPencilAlt /> Editar Notas
                                 </button>
                             ) : (
                                 <div className="edit-actions">
-                                    <button className="btn-save-grades" onClick={handleSaveGrades}>
+                                    <button className="btn-save-grades" onClick={salvarNotas}>
                                         Salvar
                                     </button>
-                                    <button className="btn-cancel-grades" onClick={handleCancelEdit}>
+                                    <button className="btn-cancel-grades" onClick={cancelarEdicaoNotas}>
                                         Cancelar
                                     </button>
                                 </div>
@@ -413,66 +370,66 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {(editingGrades
-                                        ? gradesData.filter(
-                                              (s) =>
-                                                  (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                  (s.matricula || '').includes(searchTerm)
-                                          )
-                                        : getAllStudentsWithGrades(filteredStudents)
-                                    ).map((student) => (
-                                        <tr key={student.id}>
-                                            <td>{student.name}</td>
-                                            <td>{student.matricula}</td>
+                                    {(editandoNotas
+                                        ? dadosNotas.filter(
+                                            (a) =>
+                                                (a.name || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+                                                (a.matricula || '').includes(termoBusca)
+                                        )
+                                        : obterTodosAlunosComNotas(alunosFiltrados)
+                                    ).map((aluno) => (
+                                        <tr key={aluno.id}>
+                                            <td>{aluno.name}</td>
+                                            <td>{aluno.matricula}</td>
                                             <td>
-                                                {editingGrades ? (
+                                                {editandoNotas ? (
                                                     <input
                                                         type="number"
                                                         min="0"
                                                         max="10"
                                                         step="0.1"
-                                                        value={student.nota1 ?? ''}
+                                                        value={aluno.nota1 ?? ''}
                                                         onChange={(e) =>
-                                                            handleGradeChange(student.id, 'nota1', e.target.value)
+                                                            alterarNota(aluno.id, 'nota1', e.target.value)
                                                         }
                                                         className="grade-input"
                                                     />
-                                                ) : student.nota1 !== null ? (
-                                                    student.nota1.toFixed(1)
+                                                ) : aluno.nota1 !== null ? (
+                                                    aluno.nota1.toFixed(1)
                                                 ) : (
                                                     '-'
                                                 )}
                                             </td>
                                             <td>
-                                                {editingGrades ? (
+                                                {editandoNotas ? (
                                                     <input
                                                         type="number"
                                                         min="0"
                                                         max="10"
                                                         step="0.1"
-                                                        value={student.nota2 ?? ''}
+                                                        value={aluno.nota2 ?? ''}
                                                         onChange={(e) =>
-                                                            handleGradeChange(student.id, 'nota2', e.target.value)
+                                                            alterarNota(aluno.id, 'nota2', e.target.value)
                                                         }
                                                         className="grade-input"
                                                     />
-                                                ) : student.nota2 !== null ? (
-                                                    student.nota2.toFixed(1)
+                                                ) : aluno.nota2 !== null ? (
+                                                    aluno.nota2.toFixed(1)
                                                 ) : (
                                                     '-'
                                                 )}
                                             </td>
                                             <td
                                                 className={
-                                                    student.media >= 6
+                                                    aluno.media >= 6
                                                         ? 'media-approved'
-                                                        : student.media !== null
-                                                        ? 'media-failed'
-                                                        : ''
+                                                        : aluno.media !== null
+                                                            ? 'media-failed'
+                                                            : ''
                                                 }
                                             >
-                                                {student.media !== null
-                                                    ? parseFloat(student.media).toFixed(2)
+                                                {aluno.media !== null
+                                                    ? parseFloat(aluno.media).toFixed(2)
                                                     : '-'}
                                             </td>
                                         </tr>
@@ -483,18 +440,17 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                     </div>
                 )}
 
-                {/* ── ABA OBSERVAÇÕES ── */}
                 {activeTab === 'observacoes' && (
                     <div className="observations-list">
                         <div className="observations-header">
-                            {!editingObservations ? (
+                            {!editandoObservacoes ? (
                                 <button
                                     className="btn-edit-observations"
-                                    onClick={handleEditObservations}
-                                    disabled={!hasObservations()}
+                                    onClick={iniciarEdicaoObservacoes}
+                                    disabled={!possuiObservacoes()}
                                     style={{
-                                        background: !hasObservations() ? '#6c757d' : '#2135A4',
-                                        cursor: !hasObservations() ? 'not-allowed' : 'pointer',
+                                        background: !possuiObservacoes() ? '#6c757d' : '#2135A4',
+                                        cursor: !possuiObservacoes() ? 'not-allowed' : 'pointer',
                                     }}
                                 >
                                     <FaPencilAlt /> Editar Anotações
@@ -502,44 +458,44 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                             ) : (
                                 <button
                                     className="btn-cancel-observations"
-                                    onClick={handleCancelEditObservations}
+                                    onClick={cancelarEdicaoObservacoes}
                                 >
                                     Concluir
                                 </button>
                             )}
                         </div>
 
-                        {filteredStudents.map((student) => {
-                            const comments = storage
+                        {alunosFiltrados.map((aluno) => {
+                            const comentarios = storage
                                 .getComments()
                                 .filter(
-                                    (c) => c.studentId === student.id && c.subject === user.subject
+                                    (c) => c.studentId === aluno.id && c.subject === user.subject
                                 );
-                            if (comments.length === 0) return null;
+                            if (comentarios.length === 0) return null;
 
                             return (
-                                <div key={student.id} className="observation-section">
+                                <div key={aluno.id} className="observation-section">
                                     <h3>
-                                        {student.name} - Matrícula: {student.matricula}
+                                        {aluno.name} - Matrícula: {aluno.matricula}
                                     </h3>
-                                    {comments.map((comment) => (
-                                        <div key={comment.id} className="observation-card">
+                                    {comentarios.map((comentario) => (
+                                        <div key={comentario.id} className="observation-card">
                                             <div className="observation-header-card">
                                                 <p className="observation-date">
-                                                    {new Date(comment.date).toLocaleDateString('pt-BR')}
+                                                    {new Date(comentario.date).toLocaleDateString('pt-BR')}
                                                 </p>
-                                                {editingObservations && (
+                                                {editandoObservacoes && (
                                                     <div className="observation-actions">
                                                         <button
                                                             className="btn-icon btn-edit-icon"
-                                                            onClick={() => handleStartEditComment(comment)}
+                                                            onClick={() => iniciarEdicaoComentario(comentario)}
                                                             title="Editar"
                                                         >
                                                             <FaEdit />
                                                         </button>
                                                         <button
                                                             className="btn-icon btn-delete-icon"
-                                                            onClick={() => handleDeleteComment(comment.id)}
+                                                            onClick={() => deletarComentario(comentario.id)}
                                                             title="Deletar"
                                                         >
                                                             <FaTrash />
@@ -548,26 +504,26 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                                                 )}
                                             </div>
 
-                                            {editingCommentId === comment.id ? (
+                                            {idComentarioEditando === comentario.id ? (
                                                 <div className="edit-comment-form">
                                                     <textarea
-                                                        value={editCommentText}
-                                                        onChange={(e) => setEditCommentText(e.target.value)}
+                                                        value={textoComentarioEditando}
+                                                        onChange={(e) => setTextoComentarioEditando(e.target.value)}
                                                         rows="4"
                                                         className="edit-comment-textarea"
                                                     />
                                                     <div className="edit-comment-actions">
                                                         <button
                                                             className="btn-save-comment"
-                                                            onClick={() => handleSaveComment(comment.id)}
+                                                            onClick={() => salvarComentario(comentario.id)}
                                                         >
                                                             Salvar
                                                         </button>
                                                         <button
                                                             className="btn-cancel-comment"
                                                             onClick={() => {
-                                                                setEditingCommentId(null);
-                                                                setEditCommentText('');
+                                                                setIdComentarioEditando(null);
+                                                                setTextoComentarioEditando('');
                                                             }}
                                                         >
                                                             Cancelar
@@ -575,7 +531,7 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <p className="observation-text">{comment.observation}</p>
+                                                <p className="observation-text">{comentario.observation}</p>
                                             )}
                                         </div>
                                     ))}
@@ -585,46 +541,44 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                     </div>
                 )}
 
-                {/* ── ABA BI ── */}
                 {activeTab === 'bi' && <BIDashboard user={user} />}
             </div>
 
-            {alertModal.show && (
+            {modalAlerta.show && (
                 <AlertModal
-                    message={alertModal.message}
-                    type={alertModal.type}
-                    onClose={closeAlert}
+                    message={modalAlerta.message}
+                    type={modalAlerta.type}
+                    onClose={fecharAlerta}
                 />
             )}
 
-            {/* ── MODAL ── */}
-            {showModal && (
-                <div className="modal-overlay" onClick={closeModal}>
+            {exibirModal && (
+                <div className="modal-overlay" onClick={fecharModal}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>
-                                {modalType === 'observation' && 'Adicionar Observação'}
-                                {modalType === 'grades' && 'Notas do Aluno'}
-                                {modalType === 'addGrades' && 'Adicionar Notas'}
+                                {tipoModal === 'observation' && 'Adicionar Observação'}
+                                {tipoModal === 'grades' && 'Notas do Aluno'}
+                                {tipoModal === 'addGrades' && 'Adicionar Notas'}
                             </h2>
-                            <button className="modal-close" onClick={closeModal}>
+                            <button className="modal-close" onClick={fecharModal}>
                                 ×
                             </button>
                         </div>
 
                         <div className="modal-body">
-                            <p className="student-name-modal">{selectedStudent.name}</p>
+                            <p className="student-name-modal">{alunoSelecionado.name}</p>
                             <p className="student-matricula-modal">
-                                Matrícula: {selectedStudent.matricula}
+                                Matrícula: {alunoSelecionado.matricula}
                             </p>
 
-                            {modalType === 'observation' && (
-                                <form onSubmit={handleSubmitObservation}>
+                            {tipoModal === 'observation' && (
+                                <form onSubmit={processarEnvioObservacao}>
                                     <textarea
                                         placeholder="Digite a observação..."
-                                        value={formData.observation}
+                                        value={dadosFormulario.observation}
                                         onChange={(e) =>
-                                            setFormData({ ...formData, observation: e.target.value })
+                                            setDadosFormulario({ ...dadosFormulario, observation: e.target.value })
                                         }
                                         required
                                         rows="6"
@@ -635,8 +589,8 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                                 </form>
                             )}
 
-                            {modalType === 'addGrades' && (
-                                <form onSubmit={handleSubmitGrade}>
+                            {tipoModal === 'addGrades' && (
+                                <form onSubmit={processarEnvioNota}>
                                     <div className="form-row">
                                         <div className="form-group">
                                             <label>Nota 1 (0-10)</label>
@@ -645,9 +599,9 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                                                 min={0}
                                                 max={10}
                                                 step={0.1}
-                                                value={formData.nota1}
+                                                value={dadosFormulario.nota1}
                                                 onChange={(e) =>
-                                                    setFormData({ ...formData, nota1: e.target.value })
+                                                    setDadosFormulario({ ...dadosFormulario, nota1: e.target.value })
                                                 }
                                                 required
                                             />
@@ -659,9 +613,9 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                                                 min={0}
                                                 max={10}
                                                 step={0.1}
-                                                value={formData.nota2}
+                                                value={dadosFormulario.nota2}
                                                 onChange={(e) =>
-                                                    setFormData({ ...formData, nota2: e.target.value })
+                                                    setDadosFormulario({ ...dadosFormulario, nota2: e.target.value })
                                                 }
                                                 required
                                             />
@@ -673,29 +627,29 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                                 </form>
                             )}
 
-                            {modalType === 'grades' && (
+                            {tipoModal === 'grades' && (
                                 <div className="grades-list">
-                                    {getStudentGrades(selectedStudent.id).length > 0 ? (
-                                        getStudentGrades(selectedStudent.id).map((grade) => (
-                                            <div key={grade.id} className="grade-detail">
+                                    {obterNotasAluno(alunoSelecionado.id).length > 0 ? (
+                                        obterNotasAluno(alunoSelecionado.id).map((nota) => (
+                                            <div key={nota.id} className="grade-detail">
                                                 <div className="grade-row">
                                                     <span>Nota 1:</span>
-                                                    <strong>{grade.nota1.toFixed(1)}</strong>
+                                                    <strong>{nota.nota1.toFixed(1)}</strong>
                                                 </div>
                                                 <div className="grade-row">
                                                     <span>Nota 2:</span>
-                                                    <strong>{grade.nota2.toFixed(1)}</strong>
+                                                    <strong>{nota.nota2.toFixed(1)}</strong>
                                                 </div>
                                                 <div className="grade-row">
                                                     <span>Média:</span>
                                                     <strong
-                                                        className={grade.media >= 6 ? 'approved' : 'failed'}
+                                                        className={nota.media >= 6 ? 'approved' : 'failed'}
                                                     >
-                                                        {grade.media.toFixed(2)}
+                                                        {nota.media.toFixed(2)}
                                                     </strong>
                                                 </div>
                                                 <div className="grade-date">
-                                                    {new Date(grade.date).toLocaleDateString('pt-BR')}
+                                                    {new Date(nota.date).toLocaleDateString('pt-BR')}
                                                 </div>
                                             </div>
                                         ))

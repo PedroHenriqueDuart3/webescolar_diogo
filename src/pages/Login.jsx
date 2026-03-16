@@ -4,45 +4,43 @@ import { login } from '../utils/api';
 import '../styles/Login.css';
 
 export const Login = ({ onLogin, onSwitchToRegister }) => {
-    const [formData, setFormData] = useState({
+    const [dadosFormulario, setDadosFormulario] = useState({
         usuario: '',
         senha: ''
     });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [erro, setErro] = useState('');
+    const [carregando, setCarregando] = useState(false);
+    const [mostrarSenha, setMostrarSenha] = useState(false);
 
-    const [showPassword, setShowPassword] = useState(false);
-
-    const handleSubmit = async (e) => {
+    const processarEnvio = async (e) => {
         e.preventDefault();
-        setError('');
+        setErro('');
 
-        if (!formData.usuario || !formData.senha) {
-            setError('Preencha todos os campos');
+        if (!dadosFormulario.usuario || !dadosFormulario.senha) {
+            setErro('Preencha todos os campos');
             return;
         }
 
-        setLoading(true);
+        setCarregando(true);
 
         try {
-            const usuario = formData.usuario.trim();
-            const senha = formData.senha.trim();
+            const usuario = dadosFormulario.usuario.trim();
+            const senha = dadosFormulario.senha.trim();
 
-            const user = await login(usuario, senha);
+            const usuarioAutenticado = await login(usuario, senha);
 
-            if (user) {
+            if (usuarioAutenticado) {
                 onLogin({
-                    ...user,
-                    role: user.type // 'aluno' ou 'professor'
+                    ...usuarioAutenticado,
+                    role: usuarioAutenticado.type
                 });
             } else {
-                setError('Usuário ou senha inválidos');
+                setErro('Usuário ou senha inválidos');
             }
         } catch (err) {
-            console.error('Erro ao fazer login:', err);
-            setError('Erro ao conectar com o servidor. Tente novamente.');
+            setErro('Erro ao conectar com o servidor. Tente novamente.');
         } finally {
-            setLoading(false);
+            setCarregando(false);
         }
     };
 
@@ -58,9 +56,9 @@ export const Login = ({ onLogin, onSwitchToRegister }) => {
                             <p>Faça login para continuar</p>
                         </div>
 
-                        {error && <div className="alert alert-error">{error}</div>}
+                        {erro && <div className="alert alert-error">{erro}</div>}
 
-                        <form onSubmit={handleSubmit} className="login-form">
+                        <form onSubmit={processarEnvio} className="login-form">
                             <div className="form-group">
                                 <label htmlFor="usuario">Usuário:</label>
                                 <div className="input-with-icon">
@@ -70,9 +68,9 @@ export const Login = ({ onLogin, onSwitchToRegister }) => {
                                         id="usuario"
                                         placeholder="Ex: carlos.silva ou matrícula"
                                         autoComplete="username"
-                                        value={formData.usuario}
+                                        value={dadosFormulario.usuario}
                                         onChange={(e) =>
-                                            setFormData({ ...formData, usuario: e.target.value })
+                                            setDadosFormulario({ ...dadosFormulario, usuario: e.target.value })
                                         }
                                     />
                                 </div>
@@ -83,27 +81,27 @@ export const Login = ({ onLogin, onSwitchToRegister }) => {
                                 <div className="input-with-icon">
                                     <FaLock className="input-icon" />
                                     <input
-                                        type={showPassword ? "text" : "password"}
+                                        type={mostrarSenha ? "text" : "password"}
                                         id="senha"
                                         placeholder="••••••••"
                                         autoComplete="current-password"
-                                        value={formData.senha}
+                                        value={dadosFormulario.senha}
                                         onChange={(e) =>
-                                            setFormData({ ...formData, senha: e.target.value })
+                                            setDadosFormulario({ ...dadosFormulario, senha: e.target.value })
                                         }
                                     />
                                     <button
                                         type='button'
-                                        onClick={() => setShowPassword(!showPassword)}
+                                        onClick={() => setMostrarSenha(!mostrarSenha)}
                                         style={{ background: 'none', border: 'none', cursor: 'pointer', paddingRight: '10px', color: '#666', marginRight: '-60px' }}
                                     >
-                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                        {mostrarSenha ? <FaEyeSlash /> : <FaEye />}
                                     </button>
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn-primary" disabled={loading}>
-                                {loading ? 'Entrando...' : 'Entrar'}
+                            <button type="submit" className="btn-primary" disabled={carregando}>
+                                {carregando ? 'Entrando...' : 'Entrar'}
                             </button>
                         </form>
 
