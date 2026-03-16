@@ -112,10 +112,7 @@ npm install
 
 3. Configure a URL da API:
    - Edite o arquivo `src/utils/api.js`
-   - Altere a constante `BASE_URL` se necessário:
-```javascript
-const BASE_URL = 'https://web-escolar.onrender.com';
-```
+   - Configure a URL do backend conforme seu ambiente
 
 4. Inicie o servidor de desenvolvimento:
 ```bash
@@ -202,43 +199,11 @@ sistema_escolar/
 
 ## API
 
-O sistema se conecta a uma API REST hospedada em:
-```
-https://web-escolar.onrender.com
-```
+O sistema se conecta a uma API REST backend.
 
-### Endpoints Principais
+### Autenticação
 
-#### Autenticação
-- `POST /auth/login` - Login de usuários
-
-#### Alunos
-- `GET /alunos` - Lista todos os alunos
-- `POST /alunos` - Cria novo aluno
-
-#### Notas
-- `GET /notas` - Lista todas as notas
-- `POST /notas` - Cria nova nota
-
-#### Observações
-- `GET /observacoes` - Lista todas as observações
-- `POST /observacoes` - Cria nova observação
-
-#### Disciplinas
-- `GET /disciplinas` - Lista todas as disciplinas
-- `POST /disciplinas` - Cria nova disciplina
-
-#### Professores
-- `GET /professores` - Lista todos os professores
-
-### Autenticação JWT
-
-Todas as requisições (exceto login) requerem um token JWT no header:
-```
-Authorization: Bearer <token>
-```
-
-O token é obtido no login e armazenado automaticamente no localStorage.
+O sistema utiliza autenticação JWT (JSON Web Token). O token é obtido no login e armazenado automaticamente no localStorage para uso nas requisições subsequentes.
 
 ## Critérios de Avaliação
 
@@ -275,33 +240,6 @@ As cores principais podem ser alteradas nos arquivos CSS:
 - Verde (aprovado): `#28a745`
 - Vermelho (reprovado): `#dc3545`
 
-### Logo e Branding
-
-Para adicionar o logo da instituição:
-1. Adicione a imagem em `src/assets/`
-2. Importe no componente desejado
-3. Atualize o cabeçalho do PDF em `StudentDashboard.jsx`
-
-## Solução de Problemas
-
-### Erro: "doc.autoTable is not a function"
-
-Este erro foi corrigido atualizando as versões do jsPDF. Se persistir:
-
-```bash
-npm uninstall jspdf jspdf-autotable
-npm install jspdf@^2.5.2 jspdf-autotable@^3.8.4
-npm run dev
-```
-
-### Erro de CORS
-
-Se encontrar erros de CORS, verifique se a API está configurada corretamente para aceitar requisições do seu domínio.
-
-### Token Expirado
-
-Se receber erro 401, faça logout e login novamente para obter um novo token.
-
 ## Licença
 
 Este projeto é de uso educacional.
@@ -323,3 +261,12 @@ Para suporte e dúvidas, entre em contato através dos canais oficiais da instit
 ---
 
 Desenvolvido para facilitar a gestão acadêmica
+
+-- 
+
+GRUPO: 
+
+Pedro Henrique Vicente Duarte
+Daniel Liberato
+Emilio Stuart Palumbo
+João Victor de Abreu
