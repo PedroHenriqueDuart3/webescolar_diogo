@@ -31,12 +31,6 @@ export const Header = ({ user, onLogout, activeTab, setActiveTab }) => {
                             >
                                 Observações
                             </button>
-                            <button
-                                className={`nav-tab ${activeTab === 'bi' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('bi')}
-                            >
-                                BI
-                            </button>
                         </nav>
                     )}
 

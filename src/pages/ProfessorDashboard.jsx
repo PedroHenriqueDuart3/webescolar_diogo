@@ -3,7 +3,6 @@ import { FaSearch, FaPencilAlt, FaEdit, FaTrash } from 'react-icons/fa';
 import { storage } from '../utils/storage';
 import * as apiService from '../utils/api';
 import { AlertModal } from '../components/AlertModal';
-import { BIDashboard } from './BIDashboard';
 import '../styles/ProfessorDashboard.css';
 
 export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
@@ -540,8 +539,6 @@ export const ProfessorDashboard = ({ user, activeTab, setActiveTab }) => {
                         })}
                     </div>
                 )}
-
-                {activeTab === 'bi' && <BIDashboard user={user} />}
             </div>
 
             {modalAlerta.show && (
